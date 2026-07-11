@@ -48,6 +48,7 @@ Zynq combines:
 - FPGA fabric
 
 allowing hardware/software co-design.- Faster computation
+
 - Efficient DSP usage
 
 ## Why Sigmoid LUT?
@@ -68,4 +69,7 @@ Zynq combines:
 - FPGA fabric
 
 allowing hardware/software co-design.
+
+```
+
 ```
