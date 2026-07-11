@@ -1,10 +1,3 @@
----
-
-# File: docs/design_decisions.md
-
-Add:
-
-```markdown
 # Design Decisions
 
 ## Why FPGA?
@@ -35,6 +28,26 @@ Fixed point provides:
 
 - Lower resource utilization
 - Faster computation
+- Efficient DSP usage
+
+## Why Sigmoid LUT?
+
+The exponential operation is expensive.
+
+A lookup table provides:
+
+- Constant latency
+- Reduced hardware complexity
+- Predictable implementation
+
+## Why Zynq?
+
+Zynq combines:
+
+- ARM processor
+- FPGA fabric
+
+allowing hardware/software co-design.- Faster computation
 - Efficient DSP usage
 
 ## Why Sigmoid LUT?
