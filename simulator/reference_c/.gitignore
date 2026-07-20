@@ -1,0 +1,7 @@
+# Build files
+simulator/reference_c/build/
+*.o
+
+# Executables
+systolic_reference
+test_*

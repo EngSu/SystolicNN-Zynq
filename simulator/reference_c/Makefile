@@ -1,20 +1,165 @@
-CC=gcc
+###############################################################################
+# SystolicNN-Zynq
+# Hardware Behavioral Simulator
+###############################################################################
 
-CFLAGS=-Wall -O2
+CC = gcc
 
+CFLAGS = -Wall -Wextra -std=c11 -O2 -Iinclude
 
-SRC=src/systolic_reference.c \
-    src/systolic_array.c \
-    src/pe.c \
-    src/data_loader.c
-
-
-TARGET=systolic_reference
+LDFLAGS = -lm
 
 
-all:
-	$(CC) $(CFLAGS) $(SRC) -o $(TARGET) -lm
+###############################################################################
+# Directories
+###############################################################################
 
+SRC_DIR = src
+INC_DIR = include
+BUILD_DIR = build
+
+
+###############################################################################
+# Main Simulator
+###############################################################################
+
+TARGET = systolic_reference
+
+
+SRC = \
+	$(SRC_DIR)/clock.c \
+	$(SRC_DIR)/input_buffer.c \
+	$(SRC_DIR)/weight_memory.c \
+	$(SRC_DIR)/activation_buffer.c \
+	$(SRC_DIR)/data_loader.c \
+	$(SRC_DIR)/pe.c \
+	$(SRC_DIR)/systolic_array.c \
+	$(SRC_DIR)/systolic_reference.c
+
+
+OBJ = $(SRC:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
+
+
+###############################################################################
+# Default Build
+###############################################################################
+
+all: $(TARGET)
+
+
+
+$(TARGET): $(OBJ)
+
+	$(CC) $(OBJ) -o $@ $(LDFLAGS)
+
+
+
+###############################################################################
+# Compile Object Files
+###############################################################################
+
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
+
+	mkdir -p $(BUILD_DIR)
+
+	$(CC) $(CFLAGS) -c $< -o $@
+
+
+
+###############################################################################
+# Unit Tests
+###############################################################################
+
+test_clock:
+
+	$(CC) $(CFLAGS) \
+	tests/test_clock.c \
+	src/clock.c \
+	-o test_clock $(LDFLAGS)
+
+
+
+test_input_buffer:
+
+	$(CC) $(CFLAGS) \
+	tests/test_input_buffer.c \
+	src/input_buffer.c \
+	-o test_input_buffer $(LDFLAGS)
+
+
+
+test_weight_memory:
+
+	$(CC) $(CFLAGS) \
+	tests/test_weight_memory.c \
+	src/weight_memory.c \
+	-o test_weight_memory $(LDFLAGS)
+
+
+
+test_activation_buffer:
+
+	$(CC) $(CFLAGS) \
+	tests/test_activation_buffer.c \
+	src/activation_buffer.c \
+	-o test_activation_buffer $(LDFLAGS)
+
+
+
+###############################################################################
+# Run Tests
+###############################################################################
+
+run_tests: test_clock \
+           test_input_buffer \
+           test_weight_memory \
+           test_activation_buffer
+
+	./test_clock
+
+	./test_input_buffer
+
+	./test_weight_memory
+
+	./test_activation_buffer
+
+
+
+###############################################################################
+# Clean
+###############################################################################
 
 clean:
+
+	rm -rf $(BUILD_DIR)
+
 	rm -f $(TARGET)
+
+	rm -f test_clock
+
+	rm -f test_input_buffer
+
+	rm -f test_weight_memory
+
+	rm -f test_activation_buffer
+
+
+
+###############################################################################
+# Help
+###############################################################################
+
+help:
+
+	@echo ""
+	@echo "Build:"
+	@echo " make                 Build simulator"
+	@echo " make clean           Clean project"
+	@echo ""
+	@echo "Tests:"
+	@echo " make test_clock"
+	@echo " make test_input_buffer"
+	@echo " make test_weight_memory"
+	@echo " make test_activation_buffer"
+	@echo " make run_tests"
+	@echo ""
