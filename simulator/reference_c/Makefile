@@ -70,41 +70,66 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
 # Unit Tests
 ###############################################################################
 
+###############################################################################
+# Unit Tests
+###############################################################################
+
+TEST_DIR = tests
+BIN_DIR = bin
+
+
 test_clock:
 
+	mkdir -p $(BIN_DIR)
+
 	$(CC) $(CFLAGS) \
-	tests/test_clock.c \
+	$(TEST_DIR)/test_clock.c \
 	src/clock.c \
-	-o test_clock $(LDFLAGS)
+	-o $(BIN_DIR)/test_clock $(LDFLAGS)
 
 
 
 test_input_buffer:
 
+	mkdir -p $(BIN_DIR)
+
 	$(CC) $(CFLAGS) \
-	tests/test_input_buffer.c \
+	$(TEST_DIR)/test_input_buffer.c \
 	src/input_buffer.c \
-	-o test_input_buffer $(LDFLAGS)
+	-o $(BIN_DIR)/test_input_buffer $(LDFLAGS)
 
 
 
 test_weight_memory:
 
+	mkdir -p $(BIN_DIR)
+
 	$(CC) $(CFLAGS) \
-	tests/test_weight_memory.c \
+	$(TEST_DIR)/test_weight_memory.c \
 	src/weight_memory.c \
-	-o test_weight_memory $(LDFLAGS)
+	-o $(BIN_DIR)/test_weight_memory $(LDFLAGS)
 
 
 
 test_activation_buffer:
 
+	mkdir -p $(BIN_DIR)
+
 	$(CC) $(CFLAGS) \
-	tests/test_activation_buffer.c \
+	$(TEST_DIR)/test_activation_buffer.c \
 	src/activation_buffer.c \
-	-o test_activation_buffer $(LDFLAGS)
+	-o $(BIN_DIR)/test_activation_buffer $(LDFLAGS)
 
 
+
+test_pe:
+
+	mkdir -p $(BIN_DIR)
+
+	$(CC) $(CFLAGS) \
+	$(TEST_DIR)/test_pe.c \
+	src/pe.c \
+	-o $(BIN_DIR)/test_pe $(LDFLAGS)
 
 ###############################################################################
 # Run Tests
@@ -113,7 +138,8 @@ test_activation_buffer:
 run_tests: test_clock \
            test_input_buffer \
            test_weight_memory \
-           test_activation_buffer
+           test_activation_buffer \
+           test_pe
 
 	./test_clock
 
@@ -123,7 +149,27 @@ run_tests: test_clock \
 
 	./test_activation_buffer
 
+	./test_pe
 
+
+run_clock: test_clock
+	./test_clock
+
+
+run_input_buffer: test_input_buffer
+	./test_input_buffer
+
+
+run_weight_memory: test_weight_memory
+	./test_weight_memory
+
+
+run_activation_buffer: test_activation_buffer
+	./test_activation_buffer
+
+run_pe: test_pe
+
+	./test_pe    
 
 ###############################################################################
 # Clean
@@ -143,6 +189,7 @@ clean:
 
 	rm -f test_activation_buffer
 
+	rm -f test_pe
 
 
 ###############################################################################

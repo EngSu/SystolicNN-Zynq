@@ -1,24 +1,48 @@
 #ifndef SYSTOLIC_ARRAY_H
 #define SYSTOLIC_ARRAY_H
 
+#include "common.h"
 #include "pe.h"
 
-#define INPUT_SIZE 784
 #define NUM_PE 2
 
 typedef struct
 {
 
-    PE pe[NUM_PE];
+    ProcessingElement pe[NUM_PE];
 
 } SystolicArray;
 
-void systolic_reset(
+/*
+ * Initialize systolic array
+ */
+
+void systolic_array_reset(
     SystolicArray *array);
 
-void systolic_compute(
+/*
+ * Load one input and weight into PE
+ */
+
+void systolic_array_load(
     SystolicArray *array,
-    float input[],
-    float weights[][NUM_PE]);
+    int pe_index,
+    nn_data_t input,
+    nn_data_t weight);
+
+/*
+ * Execute one clock cycle
+ */
+
+void systolic_array_tick(
+    SystolicArray *array);
+
+/*
+ * Read PE result
+ */
+
+nn_data_t systolic_array_get_output(
+    SystolicArray *array,
+    int pe_index);
 
 #endif

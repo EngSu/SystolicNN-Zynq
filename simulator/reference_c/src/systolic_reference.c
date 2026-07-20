@@ -1,44 +1,87 @@
 #include <stdio.h>
 
-#include "../include/systolic_array.h"
+#include "systolic_array.h"
+#include "clock.h"
 
 int main()
 {
 
-    float input[INPUT_SIZE];
-
-    float weights[INPUT_SIZE][NUM_PE];
+    printf("\n");
+    printf("==============================\n");
+    printf(" SystolicNN-Zynq Simulator\n");
+    printf("==============================\n\n");
 
     /*
-       Test data
-       Later replace with files
-    */
-
-    for (int i = 0; i < INPUT_SIZE; i++)
-    {
-        input[i] = 1.0;
-
-        weights[i][0] = 0.5;
-
-        weights[i][1] = 0.25;
-    }
+     * Create hardware blocks
+     */
 
     SystolicArray array;
 
-    systolic_reset(&array);
+    Clock clock;
 
-    systolic_compute(
+    /*
+     * Reset hardware
+     */
+
+    systolic_array_reset(&array);
+
+    clock_reset(&clock);
+
+    /*
+     * Example computation:
+     *
+     * PE0:
+     * input 2
+     * weight 3
+     *
+     * PE1:
+     * input 4
+     * weight 5
+     *
+     */
+
+    systolic_array_load(
         &array,
-        input,
-        weights);
+        0,
+        2.0,
+        3.0);
+
+    systolic_array_load(
+        &array,
+        1,
+        4.0,
+        5.0);
+
+    /*
+     * One clock cycle
+     */
+
+    systolic_array_tick(&array);
+
+    clock_tick(&clock);
+
+    /*
+     * Read outputs
+     */
 
     printf(
-        "Hidden neuron 0 = %f\n",
-        array.pe[0].partial_sum);
+        "Cycle = %llu\n",
+        (unsigned long long)
+            clock_get_cycle(&clock));
 
     printf(
-        "Hidden neuron 1 = %f\n",
-        array.pe[1].partial_sum);
+        "PE0 output = %f\n",
+        systolic_array_get_output(
+            &array,
+            0));
+
+    printf(
+        "PE1 output = %f\n",
+        systolic_array_get_output(
+            &array,
+            1));
+
+    printf("\nSimulation complete\n");
 
     return 0;
 }

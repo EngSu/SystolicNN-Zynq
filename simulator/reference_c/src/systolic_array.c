@@ -1,6 +1,6 @@
-#include "../include/systolic_array.h"
+#include "systolic_array.h"
 
-void systolic_reset(
+void systolic_array_reset(
     SystolicArray *array)
 {
 
@@ -10,26 +10,45 @@ void systolic_reset(
     }
 }
 
-void systolic_compute(
+void systolic_array_load(
     SystolicArray *array,
-    float input[],
-    float weights[][NUM_PE])
+    int pe_index,
+    nn_data_t input,
+    nn_data_t weight)
 {
 
-    for (int cycle = 0;
-         cycle < INPUT_SIZE;
-         cycle++)
+    if (pe_index < NUM_PE)
     {
 
-        for (int pe_index = 0;
-             pe_index < NUM_PE;
-             pe_index++)
-        {
+        pe_load_input(
+            &array->pe[pe_index],
+            input);
 
-            pe_compute(
-                &array->pe[pe_index],
-                input[cycle],
-                weights[cycle][pe_index]);
-        }
+        pe_load_weight(
+            &array->pe[pe_index],
+            weight);
     }
+}
+
+void systolic_array_tick(
+    SystolicArray *array)
+{
+
+    for (int i = 0; i < NUM_PE; i++)
+    {
+
+        array->pe[i].enable = true;
+
+        pe_tick(
+            &array->pe[i]);
+    }
+}
+
+nn_data_t systolic_array_get_output(
+    SystolicArray *array,
+    int pe_index)
+{
+
+    return pe_get_output(
+        &array->pe[pe_index]);
 }
