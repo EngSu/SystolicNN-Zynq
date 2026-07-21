@@ -5,7 +5,7 @@
 
 CC = gcc
 
-CFLAGS = -Wall -Wextra -std=c11 -O2 -Iinclude
+CFLAGS = -Wall -Wextra -std=c11 -O2 -Iinclude -Iconfig
 
 LDFLAGS = -lm
 
@@ -27,7 +27,6 @@ BIN_DIR = bin
 
 TARGET = systolic_reference
 
-
 SRC = \
 	$(SRC_DIR)/clock.c \
 	$(SRC_DIR)/input_buffer.c \
@@ -36,8 +35,8 @@ SRC = \
 	$(SRC_DIR)/data_loader.c \
 	$(SRC_DIR)/pe.c \
 	$(SRC_DIR)/systolic_array.c \
+	$(SRC_DIR)/hidden_layer.c \
 	$(SRC_DIR)/systolic_reference.c
-
 
 OBJ = $(SRC:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
 
@@ -139,7 +138,17 @@ test_systolic_array:
 	src/pe.c \
 	-o $(BIN_DIR)/test_systolic_array $(LDFLAGS)
 
+test_hidden_layer:
 
+	mkdir -p $(BIN_DIR)
+
+	$(CC) $(CFLAGS) \
+	$(TEST_DIR)/test_hidden_layer_real.c \
+	src/hidden_layer.c \
+	src/systolic_array.c \
+	src/pe.c \
+	src/data_loader.c \
+	-o $(BIN_DIR)/test_hidden_layer $(LDFLAGS)
 
 ###############################################################################
 # Run Individual Tests
@@ -180,6 +189,11 @@ run_systolic_array: test_systolic_array
 
 	./$(BIN_DIR)/test_systolic_array
 
+
+
+run_hidden_layer: test_hidden_layer
+
+	./$(BIN_DIR)/test_hidden_layer
 
 
 ###############################################################################
