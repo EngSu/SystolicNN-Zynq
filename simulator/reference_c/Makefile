@@ -30,12 +30,14 @@ TARGET = systolic_reference
 SRC = \
 	$(SRC_DIR)/clock.c \
 	$(SRC_DIR)/input_buffer.c \
+	$(SRC_DIR)/softmax.c \
 	$(SRC_DIR)/weight_memory.c \
 	$(SRC_DIR)/activation_buffer.c \
 	$(SRC_DIR)/data_loader.c \
 	$(SRC_DIR)/pe.c \
 	$(SRC_DIR)/systolic_array.c \
 	$(SRC_DIR)/hidden_layer.c \
+	$(SRC_DIR)/output_layer.c \
 	$(SRC_DIR)/systolic_reference.c
 
 OBJ = $(SRC:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
@@ -72,6 +74,14 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
 # Unit Tests
 ###############################################################################
 
+test_softmax:
+
+	mkdir -p $(BIN_DIR)
+
+	$(CC) $(CFLAGS) \
+	$(TEST_DIR)/test_softmax.c \
+	$(SRC_DIR)/softmax.c \
+	-o $(BIN_DIR)/test_softmax $(LDFLAGS)
 
 test_clock:
 
@@ -82,7 +92,14 @@ test_clock:
 	src/clock.c \
 	-o $(BIN_DIR)/test_clock $(LDFLAGS)
 
+test_output_layer:
 
+	mkdir -p $(BIN_DIR)
+
+	$(CC) $(CFLAGS) \
+	$(TEST_DIR)/test_output_layer.c \
+	$(SRC_DIR)/output_layer.c \
+	-o $(BIN_DIR)/test_output_layer $(LDFLAGS)
 
 test_input_buffer:
 
@@ -159,6 +176,9 @@ run_clock: test_clock
 
 	./$(BIN_DIR)/test_clock
 
+run_softmax: test_softmax
+
+	./$(BIN_DIR)/test_softmax
 
 
 run_input_buffer: test_input_buffer
@@ -166,6 +186,9 @@ run_input_buffer: test_input_buffer
 	./$(BIN_DIR)/test_input_buffer
 
 
+run_output_layer: test_output_layer
+
+	./$(BIN_DIR)/test_output_layer
 
 run_weight_memory: test_weight_memory
 
