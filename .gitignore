@@ -1,0 +1,10 @@
+# macOS files
+.DS_Store
+
+# Build files
+build/
+bin/
+
+# Compiled binaries
+*.o
+*.out
