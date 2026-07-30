@@ -1,52 +1,186 @@
 #include <stdio.h>
-#include "../include/data_loader.h"
 
-int load_inputs(
+#include "data_loader.h"
+
+
+
+status_t load_input_image(
+
     const char *filename,
-    float input[INPUT_SIZE])
+
+    nn_data_t input[INPUT_SIZE]
+
+)
 {
 
-    FILE *fp = fopen(filename, "r");
+    FILE *file = fopen(filename,"r");
 
-    if (!fp)
+
+    if(file == NULL)
     {
-        printf("Cannot open %s\n", filename);
-        return -1;
+        printf("Cannot open input file: %s\n",
+                filename);
+
+        return STATUS_FILE_ERROR;
     }
 
-    for (int i = 0; i < INPUT_SIZE; i++)
+
+
+    for(int i=0;i<INPUT_SIZE;i++)
     {
-        fscanf(fp, "%f", &input[i]);
+
+        if(fscanf(file,"%lf",&input[i]) != 1)
+        {
+            fclose(file);
+
+            return STATUS_ERROR;
+        }
+
     }
 
-    fclose(fp);
 
-    return 0;
+    fclose(file);
+
+
+    return STATUS_OK;
 }
 
-int load_hidden_weights(
+
+
+
+
+status_t load_hidden_weights(
+
     const char *filename,
-    float weights[INPUT_SIZE][HIDDEN_SIZE])
+
+    nn_data_t weights
+    [HIDDEN_WEIGHT_ROWS]
+    [HIDDEN_WEIGHT_COLS]
+
+)
 {
 
-    FILE *fp = fopen(filename, "r");
+    FILE *file=fopen(filename,"r");
 
-    if (!fp)
+
+    if(file==NULL)
     {
-        printf("Cannot open %s\n", filename);
-        return -1;
+        printf("Cannot open hidden weights\n");
+
+        return STATUS_FILE_ERROR;
     }
 
-    for (int i = 0; i < INPUT_SIZE; i++)
+
+
+    for(int i=0;i<HIDDEN_WEIGHT_ROWS;i++)
     {
 
-        for (int j = 0; j < HIDDEN_SIZE; j++)
+        for(int j=0;j<HIDDEN_WEIGHT_COLS;j++)
         {
-            fscanf(fp, "%f", &weights[i][j]);
+
+            fscanf(
+                file,
+                "%lf",
+                &weights[i][j]
+            );
+
         }
+
     }
 
-    fclose(fp);
 
-    return 0;
+    fclose(file);
+
+
+    return STATUS_OK;
+
+}
+
+
+
+
+
+status_t load_output_weights(
+
+    const char *filename,
+
+    nn_data_t weights
+    [OUTPUT_WEIGHT_ROWS]
+    [OUTPUT_WEIGHT_COLS]
+
+)
+{
+
+    FILE *file=fopen(filename,"r");
+
+
+    if(file==NULL)
+    {
+        printf("Cannot open output weights\n");
+
+        return STATUS_FILE_ERROR;
+    }
+
+
+
+    for(int i=0;i<OUTPUT_WEIGHT_ROWS;i++)
+    {
+
+        for(int j=0;j<OUTPUT_WEIGHT_COLS;j++)
+        {
+
+            fscanf(
+                file,
+                "%lf",
+                &weights[i][j]
+            );
+
+        }
+
+    }
+
+
+    fclose(file);
+
+
+    return STATUS_OK;
+
+}
+
+
+
+
+
+status_t load_expected_prediction(
+
+    const char *filename,
+
+    int *prediction
+
+)
+{
+
+    FILE *file=fopen(filename,"r");
+
+
+    if(file==NULL)
+    {
+        return STATUS_FILE_ERROR;
+    }
+
+
+
+    fscanf(
+        file,
+        "%d",
+        prediction
+    );
+
+
+
+    fclose(file);
+
+
+    return STATUS_OK;
+
 }

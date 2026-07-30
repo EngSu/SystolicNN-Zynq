@@ -38,6 +38,8 @@ SRC = \
 	$(SRC_DIR)/systolic_array.c \
 	$(SRC_DIR)/hidden_layer.c \
 	$(SRC_DIR)/output_layer.c \
+	$(SRC_DIR)/predictor.c \
+	$(SRC_DIR)/nn_accelerator.c \
 	$(SRC_DIR)/systolic_reference.c
 
 OBJ = $(SRC:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
@@ -83,6 +85,32 @@ test_softmax:
 	$(SRC_DIR)/softmax.c \
 	-o $(BIN_DIR)/test_softmax $(LDFLAGS)
 
+test_full_inference:
+
+	mkdir -p $(BIN_DIR)
+
+	$(CC) $(CFLAGS) \
+	tests/test_full_inference.c \
+	src/nn_accelerator.c \
+	src/hidden_layer.c \
+	src/output_layer.c \
+	src/sigmoid.c \
+	src/softmax.c \
+	src/predictor.c \
+	src/data_loader.c \
+	src/systolic_array.c \
+	src/pe.c \
+	-o $(BIN_DIR)/test_full_inference $(LDFLAGS)
+
+test_predictor:
+
+	mkdir -p $(BIN_DIR)
+
+	$(CC) $(CFLAGS) \
+	$(TEST_DIR)/test_predictor.c \
+	$(SRC_DIR)/predictor.c \
+	-o $(BIN_DIR)/test_predictor $(LDFLAGS)
+
 test_clock:
 
 	mkdir -p $(BIN_DIR)
@@ -110,7 +138,14 @@ test_input_buffer:
 	src/input_buffer.c \
 	-o $(BIN_DIR)/test_input_buffer $(LDFLAGS)
 
+test_data_loader:
 
+	mkdir -p $(BIN_DIR)
+
+	$(CC) $(CFLAGS) \
+	$(TEST_DIR)/test_data_loader.c \
+	$(SRC_DIR)/data_loader.c \
+	-o $(BIN_DIR)/test_data_loader $(LDFLAGS)
 
 test_weight_memory:
 
@@ -194,7 +229,9 @@ run_weight_memory: test_weight_memory
 
 	./$(BIN_DIR)/test_weight_memory
 
+run_predictor: test_predictor
 
+	./$(BIN_DIR)/test_predictor
 
 run_activation_buffer: test_activation_buffer
 

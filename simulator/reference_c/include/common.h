@@ -32,21 +32,6 @@
 #define OUTPUT_WEIGHT_ROWS HIDDEN_NODES
 #define OUTPUT_WEIGHT_COLS OUTPUT_NODES
 
-/***************************************************************
- * File Locations
- ***************************************************************/
-
-#define INPUT_FILE \
-    "../../../data/inputs/inputs.txt"
-
-#define HIDDEN_WEIGHT_FILE \
-    "../../../data/weights/hidden_weights_float.txt"
-
-#define OUTPUT_WEIGHT_FILE \
-    "../../../data/weights/layer2_weights_float.txt"
-
-#define EXPECTED_OUTPUT_FILE \
-    "../../../data/expected/outputs.txt"
 
 /***************************************************************
  * Floating Point Type
