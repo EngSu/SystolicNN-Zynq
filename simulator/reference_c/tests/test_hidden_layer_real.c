@@ -1,54 +1,225 @@
 #include <stdio.h>
+#include <math.h>
 
-#include "hidden_layer.h"
-#include "data_loader.h"
+#include "common.h"
 #include "paths.h"
+#include "data_loader.h"
+#include "hidden_layer.h"
 
-int main()
+#define TOLERANCE 1e-9
+
+int main(void)
 {
+    printf("==============================\n");
+    printf(" Hidden Layer Verification Test\n");
+    printf("==============================\n\n");
 
-    NeuralNetworkData data;
+    /*
+     * ------------------------------------------------------------
+     * Allocate input and weight storage
+     * ------------------------------------------------------------
+     */
 
-    HiddenLayer layer;
+    nn_data_t input[INPUT_SIZE];
 
-    if (load_inputs(
-            INPUT_FILE,
-            &data))
+    nn_data_t hidden_weights
+        [HIDDEN_WEIGHT_ROWS]
+        [HIDDEN_WEIGHT_COLS];
+
+    /*
+     * ------------------------------------------------------------
+     * Load input
+     * ------------------------------------------------------------
+     */
+
+    status_t status;
+
+    status = load_input_image(
+        INPUT_FILE,
+        input);
+
+    if (status != STATUS_OK)
     {
-        printf("Input loading failed\n");
-        return -1;
+        printf("ERROR: Failed to load input image.\n");
+        return 1;
     }
 
-    if (load_hidden_weights(
-            HIDDEN_WEIGHT_FILE,
-            &data))
+    /*
+     * ------------------------------------------------------------
+     * Load hidden-layer weights
+     * ------------------------------------------------------------
+     */
+
+    status = load_hidden_weights(
+        HIDDEN_WEIGHT_FILE,
+        hidden_weights);
+
+    if (status != STATUS_OK)
     {
-        printf("Weight loading failed\n");
-        return -1;
+        printf("ERROR: Failed to load hidden weights.\n");
+        return 1;
     }
+
+    /*
+     * ------------------------------------------------------------
+     * Run simulator hidden layer
+     * ------------------------------------------------------------
+     */
+
+    hidden_layer_t layer;
 
     hidden_layer_compute(
         &layer,
-        data.input,
-        data.hidden_weights);
+        input,
+        hidden_weights);
 
-    printf("====================\n");
+    /*
+     * ------------------------------------------------------------
+     * Independent golden-model calculation
+     *
+     * This calculation intentionally does NOT use
+     * hidden_layer_compute().
+     *
+     * It provides an independent reference against which
+     * the simulator implementation is verified.
+     * ------------------------------------------------------------
+     */
 
-    printf("Hidden Layer Result\n");
+    nn_data_t golden[HIDDEN_NODES] = {0.0};
 
-    printf("====================\n");
+    for (int neuron = 0;
+         neuron < HIDDEN_NODES;
+         neuron++)
+    {
+
+        for (int i = 0;
+             i < INPUT_SIZE;
+             i++)
+        {
+
+            golden[neuron] +=
+                input[i] *
+                hidden_weights[i][neuron];
+        }
+    }
+
+    /*
+     * ------------------------------------------------------------
+     * Display results
+     * ------------------------------------------------------------
+     */
+
+    printf("Simulator output:\n");
+
+    for (int i = 0;
+         i < HIDDEN_NODES;
+         i++)
+    {
+        printf(
+            "H%d = %.9f\n",
+            i,
+            layer.output[i]);
+    }
+
+    printf("\nGolden-model output:\n");
+
+    for (int i = 0;
+         i < HIDDEN_NODES;
+         i++)
+    {
+        printf(
+            "H%d = %.9f\n",
+            i,
+            golden[i]);
+    }
+
+    /*
+     * ------------------------------------------------------------
+     * Numerical verification
+     * ------------------------------------------------------------
+     */
+
+    int pass = 1;
+
+    for (int i = 0;
+         i < HIDDEN_NODES;
+         i++)
+    {
+
+        double error =
+            fabs(
+                layer.output[i] -
+                golden[i]);
+
+        printf(
+            "\nH%d error = %.12e",
+            i,
+            error);
+
+        if (error > TOLERANCE)
+        {
+            pass = 0;
+
+            printf("  FAIL");
+        }
+        else
+        {
+            printf("  PASS");
+        }
+    }
+
+    /*
+     * ------------------------------------------------------------
+     * Verify cycle count
+     *
+     * Current implementation performs:
+     *
+     * 784 inputs × 2 hidden neurons
+     * = 1568 MAC operations
+     * ------------------------------------------------------------
+     */
+
+    int expected_cycles =
+        INPUT_SIZE * HIDDEN_NODES;
 
     printf(
-        "Neuron 0 = %.6f\n",
-        layer.hidden_sum[0]);
+        "\n\nSimulator cycles  = %d",
+        layer.cycles);
 
     printf(
-        "Neuron 1 = %.6f\n",
-        layer.hidden_sum[1]);
+        "\nExpected cycles   = %d",
+        expected_cycles);
 
-    printf(
-        "Latency = %d cycles\n",
-        layer.cycle);
+    if (layer.cycles != expected_cycles)
+    {
+        printf("  FAIL\n");
+        pass = 0;
+    }
+    else
+    {
+        printf("  PASS\n");
+    }
 
-    return 0;
+    /*
+     * ------------------------------------------------------------
+     * Final result
+     * ------------------------------------------------------------
+     */
+
+    printf("\n==============================\n");
+
+    if (pass)
+    {
+        printf(" HIDDEN LAYER TEST: PASS\n");
+        printf("==============================\n");
+
+        return 0;
+    }
+    else
+    {
+        printf(" HIDDEN LAYER TEST: FAIL\n");
+        printf("==============================\n");
+
+        return 1;
+    }
 }
