@@ -1,182 +1,420 @@
+/*
+ * SystolicNN-Zynq
+ *
+ * Independent floating-point golden model
+ *
+ * Network:
+ *
+ *     784 inputs
+ *        |
+ *     784 x 2
+ *        |
+ *     2 hidden neurons
+ *        |
+ *     Sigmoid
+ *        |
+ *     2 output neurons
+ *        |
+ *     Softmax
+ *        |
+ *     Prediction
+ *
+ * This implementation intentionally remains independent from the
+ * simulator implementation. It is used as the software reference
+ * for Milestone 6: Golden-Model Verification.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
-#include <fcntl.h>
 #include <math.h>
-#include<assert.h>
-#include <sys/mman.h>
-#include <sys/time.h>
+#include <time.h>
 
-#define N 784
-#define H_NODES 2
-#define O_NODES 2
-#define WIDTH  2
+#define INPUT_FILE \
+    "../data/mnist/images/inputs.txt"
 
-double round_f(float var) 
-{ 
-    float value = (int)(var * 1000000 + .5); 
-    return (double)value / 1000000; 
-} 
-int main() 
+#define EXPECTED_OUTPUT_FILE \
+    "../data/mnist/reference_outputs/expected_outputs.txt"
+
+#define HIDDEN_WEIGHT_FILE \
+    "../data/weights/float/hidden_weights_float.txt"
+
+#define OUTPUT_WEIGHT_FILE \
+    "../data/weights/float/layer2_weights_float.txt"
+
+#define INPUT_SIZE 784
+#define HIDDEN_NODES 2
+#define OUTPUT_NODES 2
+#define TEST_IMAGES 2115
+
+static int load_weights(
+    const char *filename,
+    double weights[INPUT_SIZE][HIDDEN_NODES])
 {
-        	FILE *myfile,*file,*fp, *outfile, *SIGM;
-       		double myvariable0, myvariable1, outvariable;
-                double myvar;
-		double secs = 0;
-		double w0[784], w1[784];
-		double w00[2],w01[2];
-       		double w_temp[2];
-       		double w00_temp[2];
-		double exp_val_hidden[2], sigmoid[2];
-		double exp_val_out[2], sum_exp_val, softmax[2];
-		double mul_result0[784], mul_result1[784];
-                double mul_result00[2],mul_result01[2];
-		double acc_temp[2];
-		double out_temp[2];
-                double out0[2115], out1[2115];
-		double temp[2];
-		
-		int i,j;
-		int ii =0;
-		int jj =0;
-		float x_temp[2115][784];
-		struct timeval stop, start;
-//==================== reading the weights of the hidden layar =====================//
-    myfile=fopen("hidden_wieghts_float.txt", "r");
-    for(i = 0; i < N; i++)
+    FILE *file = fopen(filename, "r");
+
+    if (file == NULL)
     {
-        for (j = 0 ; j < WIDTH; j++)
+        perror(filename);
+        return 0;
+    }
+
+    for (int i = 0; i < INPUT_SIZE; i++)
+    {
+        for (int j = 0; j < HIDDEN_NODES; j++)
         {
-            fscanf(myfile,"%lf",&myvariable0);
-            w_temp[j] = myvariable0 ;
+            if (fscanf(file, "%lf", &weights[i][j]) != 1)
+            {
+                fprintf(stderr,
+                        "Error reading hidden weights at [%d][%d]\n",
+                        i, j);
+
+                fclose(file);
+                return 0;
+            }
         }
-        w0[i] = w_temp[0];
-        w1[i] = w_temp[1];
-      
- //printf("%.9f \n", w0[i]);
     }
-//==================================================================================// 
 
-//==================== reading the weights of the output layar =====================//
-
-  fp=fopen("layer2_wieghts_float.txt", "r");
-  for(i = 0; i < 2; i++)
-  {
-    for (j = 0 ; j < 2; j++)
-    {
-      fscanf(fp,"%lf",&myvariable1);
-      w00_temp[j] = myvariable1 ;
-    }
-   w00[i] = w00_temp[0];
-   w01[i] = w00_temp[1];
- // printf("%.9f \n", w01[i]);
+    fclose(file);
+    return 1;
 }
-//==================================================================================// 
-//==================== reading the inputs of the hidden layar =====================//   
- 
-    file = fopen("inputs.txt", "r");
-    if(file == NULL) {
-        perror("Error opening file");
-        return(-1);
+
+static int load_output_weights(
+    const char *filename,
+    double weights[HIDDEN_NODES][OUTPUT_NODES])
+{
+    FILE *file = fopen(filename, "r");
+
+    if (file == NULL)
+    {
+        perror(filename);
+        return 0;
     }
 
-for(i = 0; i < 2115; i++)
+    for (int i = 0; i < HIDDEN_NODES; i++)
     {
-        for (j = 0 ; j < N; j++)
+        for (int j = 0; j < OUTPUT_NODES; j++)
         {
-            fscanf(file,"%lf",&myvar);
-            x_temp[i][j] = myvar ;
- //printf("%f ", x_temp[i][j]);
+            if (fscanf(file, "%lf", &weights[i][j]) != 1)
+            {
+                fprintf(stderr,
+                        "Error reading output weights at [%d][%d]\n",
+                        i, j);
+
+                fclose(file);
+                return 0;
+            }
         }
-        
-//printf("\n\n");
     }
-   
-//==================================================================================// 
-    outfile=fopen("outputs.txt", "r");
-    SIGM=fopen("SIGM.txt", "w");
-    for(ii=0;ii<2115;ii++) {
-        
-        acc_temp[0] = 0;
-        acc_temp[1] = 0;
-        acc_temp[2] = 0;
-        acc_temp[3] = 0;
-	out_temp[0] = 0;
-        out_temp[1] = 0;
-        gettimeofday(&start, NULL);
 
-	for (int i = 0; i < N; i++){
-		mul_result0[i] = w0[i] *  x_temp[ii][i];
-		acc_temp[0] = acc_temp[0] +  mul_result0[i];
-		mul_result1[i] = w1[i] * x_temp[ii][i];
-		acc_temp[1] = acc_temp[1] + mul_result1[i];
-		
-		//printf(" w = %.9f ---  x = %d ---  w * x =%.9f  \n",w3[i], matrix[ii][i],mul_result3[i]);
-	}
-
-                fprintf(SIGM,"%f		%f\n", acc_temp[0], acc_temp[1]);
-        
-	for (j =0; j<H_NODES; j++){
-		exp_val_hidden[j] = exp(-acc_temp[j]);
-		sigmoid[j] = 1 / (1 + exp_val_hidden[j]);
-		//printf("Y_node%d = %f \n\n",j, sigmoid[j]);
-       		}
-              //  fprintf(SIGM,"%f		%f\n", sigmoid[0], sigmoid[1]);
-	for ( i = 0; i < 2; i++){
-		mul_result00[i] = w00[i] * sigmoid[i];
-		out_temp[0] = out_temp[0] + mul_result00[i];
-		mul_result01[i] = w01[i] * sigmoid[i];
-		out_temp[1] = out_temp[1] + mul_result01[i];
-		//printf(" %f	  %f",out_temp[0], out_temp[1] );
-	}
-	
-      //printf(" %f	  %f",out_temp[0], out_temp[1] );	printf("\n");
-
-	sum_exp_val =0;
-	for (j =0; j<O_NODES; j++){
-		exp_val_out[j] = exp(out_temp[j]);
-		sum_exp_val = sum_exp_val + exp_val_out[j];
-		//printf("input%d: Y_node%d = %f \n",ii, j, exp_val_out[j]);
-       		}
-       // printf("input%d: %f \n",ii, sum_exp_val);
-	//softmax[0] = round_f(exp_val_out[0] / sum_exp_val);
-	//softmax[1] = round_f(exp_val_out[1] / sum_exp_val);
-         softmax[0] = exp_val_out[0] / sum_exp_val;
-	 softmax[1] = exp_val_out[1] / sum_exp_val;
-         	gettimeofday(&stop, NULL);
-     // printf("Output %d: %.6f		%.6f \n",ii, softmax[0], softmax[1]);
-
-	for (j = 0 ; j < 2; j++){
-	      fscanf(outfile,"%lf",&outvariable);
-	      temp[j] = outvariable ;
-	    }
-		out0[ii] = temp[0];
-		out1[ii] = temp[1];
-if (ii ==1){
-                printf("Before Sigmoid %d: %f		%f\n",ii, acc_temp[0], acc_temp[1]);
-                printf("Sigmoid Output %d: %f		%f\n",ii, sigmoid[0], sigmoid[1]);
-                printf("Before softmax %d: %f		%f\n",ii, out_temp[0], out_temp[1] );	
-                printf("during softmax %d: %f		%f \n",ii, exp_val_out[0],exp_val_out[1]);
-                printf("Softmax Output %d: %f		%f \n",ii, softmax[0], softmax[1]);
-		printf("Python  Output %d: %f		%f \n",ii, out0[ii], out1[ii]);
-
+    fclose(file);
+    return 1;
 }
+
+static int load_input(
+    FILE *file,
+    double input[INPUT_SIZE])
+{
+    for (int i = 0; i < INPUT_SIZE; i++)
+    {
+        if (fscanf(file, "%lf", &input[i]) != 1)
+        {
+            return 0;
+        }
     }
 
-	//gettimeofday(&stop, NULL);
-	//printf("took %lu\n", stop.tv_usec - start.tv_usec);
+    return 1;
+}
 
-	secs = (double)(stop.tv_usec - start.tv_usec) / 1000000 + (double)(stop.tv_sec - start.tv_sec);
+static int load_expected_output(
+    FILE *file,
+    double probability[OUTPUT_NODES])
+{
+    for (int i = 0; i < OUTPUT_NODES; i++)
+    {
+        if (fscanf(file, "%lf", &probability[i]) != 1)
+        {
+            return 0;
+        }
+    }
 
-printf("=================================================================================\
-\n Time Taken(sec) for Software-based MNIST: %f\n====================================================================================\n\
-\n", secs);
+    return 1;
+}
 
-      
-       fclose(file);
-       fclose(myfile);
-       fclose(fp);
-       fclose(outfile);
-       fclose(SIGM);
-        
-	return 0;
+static int predict(
+    const double probability[OUTPUT_NODES])
+{
+    return probability[1] > probability[0] ? 1 : 0;
+}
+
+int main(void)
+{
+    printf("\n");
+    printf("============================================================\n");
+    printf(" Independent Floating-Point Golden Model\n");
+    printf("============================================================\n\n");
+
+    printf("Network: 784 -> 2 -> sigmoid -> 2 -> softmax\n");
+    printf("Test images: %d\n\n", TEST_IMAGES);
+
+    /*
+     * ------------------------------------------------------------
+     * Allocate model data
+     * ------------------------------------------------------------
+     */
+
+    double hidden_weights
+        [INPUT_SIZE][HIDDEN_NODES];
+
+    double output_weights
+        [HIDDEN_NODES][OUTPUT_NODES];
+
+    double input[INPUT_SIZE];
+
+    /*
+     * ------------------------------------------------------------
+     * Load weights
+     * ------------------------------------------------------------
+     */
+
+    if (!load_weights(
+            HIDDEN_WEIGHT_FILE,
+            hidden_weights))
+    {
+        return 1;
+    }
+
+    if (!load_output_weights(
+            OUTPUT_WEIGHT_FILE,
+            output_weights))
+    {
+        return 1;
+    }
+
+    /*
+     * ------------------------------------------------------------
+     * Open input and expected-output files
+     * ------------------------------------------------------------
+     */
+
+    FILE *input_file =
+        fopen(INPUT_FILE, "r");
+
+    if (input_file == NULL)
+    {
+        perror(INPUT_FILE);
+        return 1;
+    }
+
+    FILE *expected_file =
+        fopen(EXPECTED_OUTPUT_FILE, "r");
+
+    if (expected_file == NULL)
+    {
+        perror(EXPECTED_OUTPUT_FILE);
+        fclose(input_file);
+        return 1;
+    }
+
+    /*
+     * ------------------------------------------------------------
+     * Process all images
+     * ------------------------------------------------------------
+     */
+
+    clock_t start = clock();
+
+    for (int image = 0;
+         image < TEST_IMAGES;
+         image++)
+    {
+        if (!load_input(input_file, input))
+        {
+            fprintf(stderr,
+                    "Error reading image %d\n",
+                    image);
+
+            fclose(input_file);
+            fclose(expected_file);
+
+            return 1;
+        }
+
+        /*
+         * --------------------------------------------------------
+         * Hidden layer
+         * --------------------------------------------------------
+         */
+
+        double hidden_pre[HIDDEN_NODES] = {0.0};
+
+        for (int neuron = 0;
+             neuron < HIDDEN_NODES;
+             neuron++)
+        {
+            for (int i = 0;
+                 i < INPUT_SIZE;
+                 i++)
+            {
+                hidden_pre[neuron] +=
+                    input[i] *
+                    hidden_weights[i][neuron];
+            }
+        }
+
+        /*
+         * --------------------------------------------------------
+         * Sigmoid
+         * --------------------------------------------------------
+         */
+
+        double hidden_post[HIDDEN_NODES];
+
+        for (int i = 0;
+             i < HIDDEN_NODES;
+             i++)
+        {
+            hidden_post[i] =
+                1.0 /
+                (1.0 + exp(-hidden_pre[i]));
+        }
+
+        /*
+         * --------------------------------------------------------
+         * Output layer
+         * --------------------------------------------------------
+         */
+
+        double output_score[OUTPUT_NODES] = {0.0};
+
+        for (int neuron = 0;
+             neuron < OUTPUT_NODES;
+             neuron++)
+        {
+            for (int i = 0;
+                 i < HIDDEN_NODES;
+                 i++)
+            {
+                output_score[neuron] +=
+                    hidden_post[i] *
+                    output_weights[i][neuron];
+            }
+        }
+
+        /*
+         * --------------------------------------------------------
+         * Softmax
+         * --------------------------------------------------------
+         */
+
+        double exp_output[OUTPUT_NODES];
+
+        double sum_exp = 0.0;
+
+        for (int i = 0;
+             i < OUTPUT_NODES;
+             i++)
+        {
+            exp_output[i] =
+                exp(output_score[i]);
+
+            sum_exp += exp_output[i];
+        }
+
+        double probability[OUTPUT_NODES];
+
+        for (int i = 0;
+             i < OUTPUT_NODES;
+             i++)
+        {
+            probability[i] =
+                exp_output[i] /
+                sum_exp;
+        }
+
+        int prediction =
+            predict(probability);
+
+        /*
+         * --------------------------------------------------------
+         * Read expected output
+         * --------------------------------------------------------
+         */
+
+        double expected[OUTPUT_NODES];
+
+        if (!load_expected_output(
+                expected_file,
+                expected))
+        {
+            fprintf(stderr,
+                    "Error reading expected output for image %d\n",
+                    image);
+
+            fclose(input_file);
+            fclose(expected_file);
+
+            return 1;
+        }
+
+        /*
+         * --------------------------------------------------------
+         * Display first image
+         * --------------------------------------------------------
+         */
+
+        if (image == 0)
+        {
+            printf("Golden Model - Image 1\n");
+            printf("----------------------------------------\n");
+
+            printf(
+                "Hidden pre activation:\n"
+                "H0 = %.9f\n"
+                "H1 = %.9f\n\n",
+                hidden_pre[0],
+                hidden_pre[1]);
+
+            printf(
+                "Hidden activation:\n"
+                "H0 = %.9f\n"
+                "H1 = %.9f\n\n",
+                hidden_post[0],
+                hidden_post[1]);
+
+            printf(
+                "Output score:\n"
+                "Class0 = %.9f\n"
+                "Class1 = %.9f\n\n",
+                output_score[0],
+                output_score[1]);
+
+            printf(
+                "Probability:\n"
+                "P0 = %.9f\n"
+                "P1 = %.9f\n\n",
+                probability[0],
+                probability[1]);
+
+            printf(
+                "Prediction = %d\n\n",
+                prediction);
+        }
+    }
+
+    clock_t end = clock();
+
+    double elapsed =
+        (double)(end - start) /
+        CLOCKS_PER_SEC;
+
+    fclose(input_file);
+    fclose(expected_file);
+
+    printf("============================================================\n");
+    printf(
+        "Golden-model execution time: %.6f sec\n",
+        elapsed);
+    printf("============================================================\n\n");
+
+    return 0;
 }
