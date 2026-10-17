@@ -38,3 +38,22 @@ Develop a self-checking SystemVerilog testbench.
 - Result: [PASS or FAIL]
 - Observed issues: [describe findings]
 - Changes made: [describe fixes]
+
+## Q1.15 Multiplier Verification
+
+Module: rtl/mac/multiplier_q15.v
+Testbench: tb/mac/tb_multiplier_q15.sv
+Simulator: Vivado XSim
+
+Design:
+- 16-bit signed operands
+- 32-bit signed product
+- Combinational arithmetic
+
+Verification:
+- Seven directed test cases
+- Positive and negative multiplication
+- Zero multiplication
+- Signed boundary conditions
+
+Actual result: PASS
