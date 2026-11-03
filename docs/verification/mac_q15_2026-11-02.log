@@ -1,0 +1,5 @@
+PASS: image_0001_q15.hex PE0=-1703180844 PE1=1904845204
+PASS: image_0002_q15.hex PE0=3102030662 PE1=-3472637570
+PASS: asynchronous reset
+ALL MAC TESTS PASSED
+tb/mac/tb_mac_q15.sv:211: $finish called at 15771000 (1ps)
