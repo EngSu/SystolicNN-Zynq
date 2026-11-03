@@ -1,0 +1,6 @@
+PASS: Image 1 hidden sums match C
+PASS: Image 2 hidden sums match C
+PASS: 784 reads and 784 MACs per image
+PASS: asynchronous reset
+ALL HIDDEN-LAYER ROM TESTS PASSED
+tb/hidden/tb_hidden_layer_rom_top.sv:121: $finish called at 7911000 (1ps)
