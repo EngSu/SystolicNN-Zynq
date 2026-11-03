@@ -1,0 +1,3 @@
+# Locally compiled C test executables
+/test_*
+/export_rtl_vectors

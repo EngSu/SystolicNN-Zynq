@@ -1,0 +1,10 @@
+=== 784-2-2 INTEGER INFERENCE DATASET REPORT ===
+Images: 2115
+Integer-vs-existing mismatches: 0
+Integer-vs-floating nn_inference prediction mismatches: 0
+Exact score ties: 0
+Input Q1.15 saturations: 12678
+Weight Q1.15 saturations: 0
+Output score 0 Q30 range: [-764636879, 654825609]
+Output score 1 Q30 range: [-612478509, 798429809]
+PASS: integer candidate agrees with existing LUT path and the existing floating nn_inference predictions
